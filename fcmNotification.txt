@@ -1,0 +1,92 @@
+ @Headers("Content-Type: application/json")
+    @POST("send")
+    Call<JsonObject> sendFCM(@Header("Authorization") String authorization,
+                             @Body JsonObject body);
+
+
+    public class ApiClient {
+
+        public static String BASE_URL = "https://fcm.googleapis.com/fcm/";
+
+        private static Retrofit retrofit;
+
+        public static Retrofit getClient() {
+            if (retrofit == null) {
+                retrofit = new Retrofit.Builder()
+                        .baseUrl(BASE_URL)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        //.addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                        .build();
+            }
+            return retrofit;
+        }
+
+    }
+
+    public void sendFCMNotification(String topics) {
+        String topic = "/topics/user_" + topics;
+        //  mProgressBar.setVisibility(View.VISIBLE);
+        JsonObject jsonObject = new JsonObject();
+        try {
+
+            JSONObject root = new JSONObject();
+
+            //Notification
+            JSONObject notification = new JSONObject();
+            notification.put("body", "bbbbbbbbbbbb");
+            notification.put("title", "Test");
+			//notification.put("icon", icon);
+
+            //Data
+            JSONObject data = new JSONObject();
+            data.put("message", "");
+            data.put("link", "");
+            data.put("adblink", "");
+
+
+
+  		//token Array
+            JSONArray jsonArray = new JSONArray();
+            jsonArray.put(refreshedToken);
+
+            JsonParser jsonParser = new JsonParser();
+            root.put("notification", notification);
+            //root.put("data", data);
+           // root.put("to", topic);
+            root.put("registration_ids", jsonArray);
+
+            jsonObject = (JsonObject) jsonParser.parse(root.toString());
+
+            //print parameter
+            Log.e("MY gson.JSON:  ", "AS PARAMETER  " + jsonObject);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        ApiInterface apiService = ApiClient.getClient().create(ApiInterface.class);
+        Call<JsonObject> call = apiService.sendFCM("key=" + FCM_API_KEY, jsonObject);
+        call.enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, retrofit2.Response<JsonObject> response) {
+                Log.d("robin notification", new Gson().toJson(response.body()));
+                if (response.isSuccessful()) {
+                    //mProgressBar.setVisibility(View.GONE);
+                    Toast.makeText(getActivity(), "Request Send Successfully", Toast.LENGTH_SHORT).show();
+
+                } else {
+                    // mllSattel.setVisibility(View.GONE);
+                    //mProgressBar.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                // mProgressBar.setVisibility(View.GONE);
+                Log.d("robin notificatioerrrn", t.getMessage());
+                Toast.makeText(getActivity(), t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+    }
